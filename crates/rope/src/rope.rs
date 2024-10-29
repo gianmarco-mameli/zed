@@ -30,9 +30,7 @@ impl Rope {
     }
 
     pub fn append(&mut self, rope: Rope) {
-        let mut chunks = rope.chunks.cursor::<()>(&());
-        chunks.next(&());
-        if let Some(chunk) = chunks.item() {
+        if let Some(chunk) = rope.chunks.first() {
             if self
                 .chunks
                 .last()
@@ -40,12 +38,16 @@ impl Rope {
                 || chunk.text.len() < chunk::MIN_BASE
             {
                 self.push_chunk(chunk.as_slice());
+
+                let mut chunks = rope.chunks.cursor::<()>(&());
                 chunks.next(&());
+                chunks.next(&());
+                self.chunks.append(chunks.suffix(&()), &());
+                self.check_invariants();
+                return;
             }
         }
-
-        self.chunks.append(chunks.suffix(&()), &());
-        self.check_invariants();
+        self.chunks.append(rope.chunks.clone(), &());
     }
 
     pub fn replace(&mut self, range: Range<usize>, text: &str) {
